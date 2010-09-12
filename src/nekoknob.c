@@ -72,39 +72,7 @@ static gint neko_knob_button_release(GtkWidget *widget, GdkEventButton *event) {
 
   knob = NEKO_KNOB(widget);
 
-  switch (knob->state) {
-    case STATE_PRESSED:
-      //gtk_grab_remove(widget);
-      knob->state = STATE_IDLE;
-/*
-      switch (event->button) {
-	case 1:
-	  knob->adjustment->value -= knob->adjustment->page_increment;
-	  gtk_signal_emit_by_name(GTK_OBJECT(knob->adjustment), "value_changed");
-	  break;
-
-	case 3:
-	  knob->adjustment->value += knob->adjustment->page_increment;
-	  gtk_signal_emit_by_name(GTK_OBJECT(knob->adjustment), "value_changed");
-	  break;
-
-	default:
-	  break;
-      }
-      break;
-
-    case STATE_DRAGGING:
-      gtk_grab_remove(widget);
-      knob->state = STATE_IDLE;
-
-      if (knob->policy != GTK_UPDATE_CONTINUOUS && knob->old_value != knob->adjustment->value)
-	gtk_signal_emit_by_name(GTK_OBJECT(knob->adjustment), "value_changed");
-
-      break;
-*/
-    default:
-      break;
-  }
+  knob->state = STATE_IDLE;
 
   return FALSE;
 }
@@ -112,7 +80,7 @@ static gint neko_knob_button_release(GtkWidget *widget, GdkEventButton *event) {
 static void neko_knob_update_mouse(nekoKnob *knob, gdouble x, gdouble y,
                                   gboolean absolute)
 {
-    gfloat old_value, new_value, dv, dh;
+    gdouble old_value, new_value, dv, dh;
     gdouble angle;
 
     g_return_if_fail(knob != NULL);
@@ -120,93 +88,51 @@ static void neko_knob_update_mouse(nekoKnob *knob, gdouble x, gdouble y,
 
     old_value = knob->adjustment->value;
 
+    dv = knob->saved_y - y; // inverted cartesian graphics coordinate system
+    printf("%f\n", dv);
 
-  printf("%f %f\n", x, y);
-
-    angle = atan2(-y + (KNOB_SIZE>>1), x - (KNOB_SIZE>>1));
-
-
-printf("angle=%f\n",angle);   
-    if (absolute) {
-
-        angle /= 3.14159;
-        if (angle < -0.5)
-            angle += 2;
-
-        new_value = -(2.0/3.0) * (angle - 1.25);   /* map [1.25pi, -0.25pi] onto [0, 1] */
-        new_value *= knob->adjustment->upper - knob->adjustment->lower;
-        new_value += knob->adjustment->lower;
-
-    } else {
-
-        dv = knob->saved_y - y; /* inverted cartesian graphics coordinate system */
         dh = x - knob->saved_x;
         knob->saved_x = x;
         knob->saved_y = y;
-
+/*
         if (x >= 0 && x <= KNOB_SIZE)
-            dh = 0;  /* dead zone */
+            dh = 0;  // dead zone 
         else {
             angle = cos(angle);
             dh *= angle * angle;
         }
-
+*/
         new_value = knob->adjustment->value +
-                    dv * knob->adjustment->step_increment +
-                    dh * (knob->adjustment->upper -
+                    dh * knob->adjustment->step_increment +
+                    dv * (knob->adjustment->upper -
                           knob->adjustment->lower) / 200.0f;
-    }
+    
 
     new_value = MAX(MIN(new_value, knob->adjustment->upper),
                     knob->adjustment->lower);
 
     knob->adjustment->value = new_value;
 
-gtk_signal_emit_by_name(GTK_OBJECT(knob->adjustment), "value_changed");
+    gtk_signal_emit_by_name(GTK_OBJECT(knob->adjustment), "value_changed");
 
-   // if (knob->adjustment->value != old_value)
-   //     gtk_knob_update_mouse_update(knob);
 }
 
 static gint neko_knob_motion_notify(GtkWidget *widget, GdkEventMotion *event) {
-  nekoKnob *knob;
-  GdkModifierType mods;
-  gdouble x, y;
+    nekoKnob *knob;
+    gdouble x, y;
 
-  g_return_val_if_fail(widget != NULL, FALSE);
-  g_return_val_if_fail(NEKO_IS_KNOB(widget), FALSE);
-  g_return_val_if_fail(event != NULL, FALSE);
+    g_return_val_if_fail(widget != NULL, FALSE);
+    g_return_val_if_fail(NEKO_IS_KNOB(widget), FALSE);
+    g_return_val_if_fail(event != NULL, FALSE);
 
-  knob = NEKO_KNOB(widget);
+    knob = NEKO_KNOB(widget);
 
-  x = event->x;
-  y = event->y;
+    x = event->x;
+    y = event->y;
 
+    if (knob->state == STATE_PRESSED) neko_knob_update_mouse(knob, x, y, TRUE);   // coarse
 
-    // wtf does this do?
-  //if (event->is_hint || (event->window != widget->window))
-  //  gdk_window_get_pointer(widget->window, &x, &y, &mods);
-
-  switch (knob->state) {
-    case STATE_PRESSED:
-      knob->state = STATE_DRAGGING;
-      /* fall through */
-
-    case STATE_DRAGGING:
-    //  if (mods & GDK_BUTTON1_MASK) {
-	neko_knob_update_mouse(knob, x, y, TRUE);   // coarse
-	//return TRUE;
-    //  } else if (mods & GDK_BUTTON3_MASK) {
-	//neko_knob_update_mouse(knob, x, y, FALSE);   // fine
-	//return TRUE;
-    //  }
-      break;
-
-    default:
-      break;
-  }
-
-  return FALSE;
+    return FALSE;
 }
 
 
@@ -218,13 +144,6 @@ static void neko_knob_adjustment_value_changed (GtkAdjustment *adjustment, gpoin
   g_return_if_fail(data != NULL);
 
   knob = NEKO_KNOB(data);
-
-    // FIXME wtf was this for, anyway?
-  //if (knob->old_value != adjustment->value) {
-  //  gtk_knob_update (knob);
-  //
-  //  knob->old_value = adjustment->value;
-  //}
   gtk_widget_queue_draw(GTK_WIDGET(knob));
 }
 
