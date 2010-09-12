@@ -109,7 +109,7 @@ static gint neko_knob_button_release(GtkWidget *widget, GdkEventButton *event) {
   return FALSE;
 }
 
-static void neko_knob_update_mouse(nekoKnob *knob, gint x, gint y,
+static void neko_knob_update_mouse(nekoKnob *knob, gdouble x, gdouble y,
                                   gboolean absolute)
 {
     gfloat old_value, new_value, dv, dh;
@@ -120,8 +120,13 @@ static void neko_knob_update_mouse(nekoKnob *knob, gint x, gint y,
 
     old_value = knob->adjustment->value;
 
+
+  printf("%f %f\n", x, y);
+
     angle = atan2(-y + (KNOB_SIZE>>1), x - (KNOB_SIZE>>1));
 
+
+printf("angle=%f\n",angle);   
     if (absolute) {
 
         angle /= 3.14159;
@@ -157,6 +162,8 @@ static void neko_knob_update_mouse(nekoKnob *knob, gint x, gint y,
 
     knob->adjustment->value = new_value;
 
+gtk_signal_emit_by_name(GTK_OBJECT(knob->adjustment), "value_changed");
+
    // if (knob->adjustment->value != old_value)
    //     gtk_knob_update_mouse_update(knob);
 }
@@ -164,7 +171,7 @@ static void neko_knob_update_mouse(nekoKnob *knob, gint x, gint y,
 static gint neko_knob_motion_notify(GtkWidget *widget, GdkEventMotion *event) {
   nekoKnob *knob;
   GdkModifierType mods;
-  gint x, y;
+  gdouble x, y;
 
   g_return_val_if_fail(widget != NULL, FALSE);
   g_return_val_if_fail(NEKO_IS_KNOB(widget), FALSE);
@@ -175,11 +182,10 @@ static gint neko_knob_motion_notify(GtkWidget *widget, GdkEventMotion *event) {
   x = event->x;
   y = event->y;
 
-  printf("%f %f\n", x, y);
 
     // wtf does this do?
-  if (event->is_hint || (event->window != widget->window))
-    gdk_window_get_pointer(widget->window, &x, &y, &mods);
+  //if (event->is_hint || (event->window != widget->window))
+  //  gdk_window_get_pointer(widget->window, &x, &y, &mods);
 
   switch (knob->state) {
     case STATE_PRESSED:
@@ -187,13 +193,13 @@ static gint neko_knob_motion_notify(GtkWidget *widget, GdkEventMotion *event) {
       /* fall through */
 
     case STATE_DRAGGING:
-      if (mods & GDK_BUTTON1_MASK) {
+    //  if (mods & GDK_BUTTON1_MASK) {
 	neko_knob_update_mouse(knob, x, y, TRUE);   // coarse
-	return TRUE;
-      } else if (mods & GDK_BUTTON3_MASK) {
-	neko_knob_update_mouse(knob, x, y, FALSE);   // fine
-	return TRUE;
-      }
+	//return TRUE;
+    //  } else if (mods & GDK_BUTTON3_MASK) {
+	//neko_knob_update_mouse(knob, x, y, FALSE);   // fine
+	//return TRUE;
+    //  }
       break;
 
     default:
