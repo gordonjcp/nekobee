@@ -1,0 +1,38 @@
+2005-11-14 01:37  gordonjcp
+
+	* trunk/.tm_project.cache, trunk/configure, trunk/configure.in,
+	  trunk/src/Makefile.am, trunk/src/Makefile.in,
+	  trunk/src/gui_callbacks.c, trunk/src/gui_friendly_patches.c,
+	  trunk/src/nekobee-dssi.c, trunk/src/nekobee_ports.c: Last commit
+	  before 0.1.2 release
+
+2005-11-12 00:14  gordonjcp
+
+	* trunk/.tm_project.cache, trunk/src/Makefile.am,
+	  trunk/src/Makefile.in, trunk/src/gui_main.h,
+	  trunk/src/nekobee.h, trunk/src/nekobee_synth.c: starting to add
+	  experimental sysex support
+
+2005-11-11 00:39  gordonjcp
+
+	* branches, tags, trunk, trunk/.tm_project.cache, trunk/COPYING,
+	  trunk/INSTALL, trunk/Makefile.am, trunk/Makefile.in,
+	  trunk/aclocal.m4, trunk/autogen.sh, trunk/compile,
+	  trunk/config.guess, trunk/config.h.in, trunk/config.sub,
+	  trunk/configure, trunk/configure.in, trunk/depcomp, trunk/extra,
+	  trunk/extra/knob.png, trunk/extra/switch.png, trunk/install-sh,
+	  trunk/ltmain.sh, trunk/missing, trunk/mkinstalldirs, trunk/src,
+	  trunk/src/Makefile.am, trunk/src/Makefile.in,
+	  trunk/src/gtkknob.c, trunk/src/gtkknob.h,
+	  trunk/src/gui_callbacks.c, trunk/src/gui_callbacks.h,
+	  trunk/src/gui_data.c, trunk/src/gui_data.h,
+	  trunk/src/gui_friendly_patches.c, trunk/src/gui_interface.c,
+	  trunk/src/gui_interface.h, trunk/src/gui_main.c,
+	  trunk/src/gui_main.h, trunk/src/nekobee-dssi.c,
+	  trunk/src/nekobee.h, trunk/src/nekobee_data.c,
+	  trunk/src/nekobee_ports.c, trunk/src/nekobee_ports.h,
+	  trunk/src/nekobee_synth.c, trunk/src/nekobee_synth.h,
+	  trunk/src/nekobee_types.h, trunk/src/nekobee_voice.c,
+	  trunk/src/nekobee_voice.h, trunk/src/nekobee_voice_render.c:
+	  Initial import
+
