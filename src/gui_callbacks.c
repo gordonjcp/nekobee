@@ -98,7 +98,7 @@ on_menu_about_activate                 (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
     char buf[256];
-    snprintf(buf, 256, "nekobee version: " VERSION "\n"
+    snprintf(buf, 256, "nekobee version: VERSION \n"
                        "plugin URL: %s\n"
                        "host URL: %s\n", osc_self_url, osc_host_url);
     gtk_label_set_text (GTK_LABEL (about_label), buf);

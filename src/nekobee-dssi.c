@@ -25,6 +25,8 @@
  * MA 02111-1307, USA.
  */
 
+#include <config.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +36,12 @@
 #include <ladspa.h>
 #include "dssi.h"
 
+#if USE_LV2
+#include <lv2.h>
+#include "lv2-midiport.h"
+#include "lv2-midifunctions.h"
+#endif
+
 #include "nekobee_types.h"
 #include "nekobee.h"
 #include "nekobee_ports.h"
@@ -42,6 +50,9 @@
 
 static LADSPA_Descriptor *nekobee_LADSPA_descriptor = NULL;
 static DSSI_Descriptor   *nekobee_DSSI_descriptor = NULL;
+#if USE_LV2
+static LV2_Descriptor   *nekobee_LV2_descriptor = NULL;
+#endif
 
 static void nekobee_cleanup(LADSPA_Handle instance);
 static void nekobee_run_synth(LADSPA_Handle instance, unsigned long sample_count,
@@ -126,6 +137,22 @@ nekobee_instantiate(const LADSPA_Descriptor *descriptor, unsigned long sample_ra
     return (LADSPA_Handle)synth;
 }
 
+#if USE_LV2
+/*
+ * nekobee_lv2_instantiate
+ *
+ * implements LV2 (*instantiate)()
+ */
+static LV2_Handle
+nekobee_lv2_instantiate(const LV2_Descriptor *descriptor, 
+			double sample_rate,
+			const char* bundle_path,
+			const LV2_Feature* const* host_features)
+{
+  return (LV2_Handle)nekobee_instantiate(NULL, (unsigned long)sample_rate);
+}
+#endif
+
 /*
  * nekobee_connect_port
  *
@@ -152,6 +179,22 @@ nekobee_connect_port(LADSPA_Handle instance, unsigned long port, LADSPA_Data *da
         break;
     }
 }
+
+#if USE_LV2
+/*
+ * nekobee_lv2_connect_port
+ *
+ * implements LV2 (*connect_port)()
+ */
+static void
+nekobee_lv2_connect_port(LV2_Handle instance, uint32_t port, void *data)
+{
+  if (port == XSYNTH_PORTS_COUNT)
+    ((nekobee_synth_t*)instance)->midiinput = data;
+  else
+    nekobee_connect_port(instance, port, data);
+}
+#endif
 
 /*
  * nekobee_activate
@@ -385,6 +428,40 @@ nekobee_handle_event(nekobee_synth_t *synth, snd_seq_event_t *event)
     }
 }
 
+#if USE_LV2
+/*
+ * nekobee_handle_raw_event
+ */
+static inline void
+nekobee_handle_raw_event(nekobee_synth_t *synth, uint32_t size, unsigned char* data)
+{
+  
+    if (size != 3)
+      return;
+  
+    XDB_MESSAGE(XDB_DSSI, " nekobee_handle_raw_event called with event type %X\n", data[0]);
+    
+    switch (data[0]) {
+    case 0x80:
+      nekobee_synth_note_off(synth, data[1], data[2]);
+      break;
+    case 0x90:
+      if (data[2] > 0)
+	nekobee_synth_note_on(synth, data[1], data[2]);
+      else
+	nekobee_synth_note_off(synth, data[1], 64); /* shouldn't happen, but... */
+        break;
+    case 0xB0:
+        nekobee_synth_control_change(synth, data[1], data[2]);
+        break;
+
+// somewhere in here we need to respond to NRPN
+      default:
+        break;
+    }
+}
+#endif
+
 /*
  * nekobee_run_synth
  *
@@ -463,6 +540,85 @@ nekobee_run_synth(LADSPA_Handle instance, unsigned long sample_count,
 //                             snd_seq_event_t *Events,
 //                             unsigned long    EventCount);
 
+
+#if USE_LV2
+/*
+ * nekobee_lv2_run
+ *
+ * implements LADSPA (*run)() by calling nekobee_run_synth() with no events
+ */
+static void
+nekobee_lv2_run(LADSPA_Handle instance, uint32_t sample_count)
+{
+  nekobee_synth_t *synth = (nekobee_synth_t *)instance;
+  unsigned long samples_done = 0;
+  unsigned long burst_size;
+  LV2_MIDIState mstate = { synth->midiinput, sample_count, 0 };
+  double event_time;
+  uint32_t event_size;
+  unsigned char* event_data;
+  
+  /* attempt the mutex, return only silence if lock fails. */
+  if (dssp_voicelist_mutex_trylock(synth)) {
+    memset(synth->output, 0, sizeof(LADSPA_Data) * sample_count);
+    return;
+  }
+
+  if (synth->pending_program_change > -1)
+    dssp_handle_pending_program_change(synth);
+  
+  
+  
+  while (samples_done < sample_count) {
+    if (!synth->nugget_remains)
+      synth->nugget_remains = XSYNTH_NUGGET_SIZE;
+
+    /* process any ready events */
+    while ((uint32_t)lv2midi_get_event(&mstate, &event_time, &event_size, &event_data) <= samples_done) {
+      nekobee_handle_raw_event(synth, event_size, event_data);
+      lv2midi_step(&mstate);
+    }
+	   
+    /* calculate the sample count (burst_size) for the next
+     * nekobee_voice_render() call to be the smallest of:
+     * - control calculation quantization size (XSYNTH_NUGGET_SIZE, in
+     *     samples)
+     * - the number of samples remaining in an already-begun nugget
+     *     (synth->nugget_remains)
+     * - the number of samples until the next event is ready
+     * - the number of samples left in this run
+     */
+    burst_size = XSYNTH_NUGGET_SIZE;
+    if (synth->nugget_remains < burst_size) {
+      /* we're still in the middle of a nugget, so reduce the burst size
+       * to end when the nugget ends */
+      burst_size = synth->nugget_remains;
+    }
+    if (event_time < sample_count
+	&& (uint32_t)event_time - samples_done < burst_size) {
+      /* reduce burst size to end when next event is ready */
+      burst_size = (uint32_t)event_time - samples_done;
+    }
+    if (sample_count - samples_done < burst_size) {
+      /* reduce burst size to end at end of this run */
+      burst_size = sample_count - samples_done;
+    }
+
+    /* render the burst */
+    nekobee_synth_render_voices(synth, synth->output + samples_done, burst_size,
+                                (burst_size == synth->nugget_remains));
+    samples_done += burst_size;
+    synth->nugget_remains -= burst_size;
+  }
+#if defined(XSYNTH_DEBUG) && (XSYNTH_DEBUG & XDB_AUDIO)
+  *synth->output += 0.10f; /* add a 'buzz' to output so there's something audible even when quiescent */
+#endif /* defined(XSYNTH_DEBUG) && (XSYNTH_DEBUG & XDB_AUDIO) */
+
+  dssp_voicelist_mutex_unlock(synth);
+}
+#endif
+
+
 /* ---- export ---- */
 
 const LADSPA_Descriptor *ladspa_descriptor(unsigned long index)
@@ -485,7 +641,17 @@ const DSSI_Descriptor *dssi_descriptor(unsigned long index)
     }
 }
 
-void _init()
+#if USE_LV2
+const LV2_Descriptor *lv2_descriptor(uint32_t index)
+{
+  if (index == 0)
+    return nekobee_LV2_descriptor;
+  return NULL;
+}
+#endif
+
+void __attribute__ ((constructor))
+nekobee_init()
 {
     int i;
     char **port_names;
@@ -553,9 +719,24 @@ void _init()
         nekobee_DSSI_descriptor->run_multiple_synths = NULL;
         nekobee_DSSI_descriptor->run_multiple_synths_adding = NULL;
     }
+    
+#if USE_LV2
+    nekobee_LV2_descriptor = (LV2_Descriptor *) malloc(sizeof(LV2_Descriptor));
+    if (nekobee_LV2_descriptor) {
+      nekobee_LV2_descriptor->URI = strdup("http://nekosynth.co.uk/wiki/nekobee");
+      nekobee_LV2_descriptor->instantiate = nekobee_lv2_instantiate;
+      nekobee_LV2_descriptor->connect_port = nekobee_lv2_connect_port;
+      nekobee_LV2_descriptor->activate = nekobee_activate;
+      nekobee_LV2_descriptor->run = nekobee_lv2_run;
+      nekobee_LV2_descriptor->deactivate = nekobee_deactivate;
+      nekobee_LV2_descriptor->cleanup = nekobee_cleanup;
+      nekobee_LV2_descriptor->extension_data = NULL;
+    }
+#endif
 }
 
-void _fini()
+void __attribute__((destructor))
+nekobee_fini()
 {
     if (nekobee_LADSPA_descriptor) {
         free((LADSPA_PortDescriptor *) nekobee_LADSPA_descriptor->PortDescriptors);

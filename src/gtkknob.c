@@ -25,6 +25,7 @@
 #include <gtk/gtkmain.h>
 #include <gtk/gtksignal.h>
 
+#include "config.h"
 #include "gtkknob.h"
 
 #ifndef M_PI
