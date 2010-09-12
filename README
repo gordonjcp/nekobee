@@ -1,10 +1,18 @@
 There isn't really a README for nekobee yet.
 
 You've got as far as extracting the tarball or cloning the git repo.  This is good.
-Say "./configure" - this bit isn't set up right because I'm crap at autotools.
-The autoconf scripts might fail to notice if you don't have liblo, dssi or some development libraries.
-Once configure has done its thing, use make and make install - the default place to put it is /usr/local/lib/dssi/nekobee
-If you get compilation errors, you're probably missing a library.  Please report it to gordon@nekosynth.co.uk
+As of 0.1.8, nekobee uses waf instead of autotools.  Don't worry, you don't need to install anything else.
+
+Configure:
+$ ./waf configure
+Build:
+$ ./waf
+Install (do this as root, or use sudo):
+# ./waf install
+
+You didn't really need me to tell you that, did you?
+
+The default install directory is /usr/local/lib/dssi/ which can be changed by passing --prefix to ./waf configure
 
 Launch the plugin with your favourite DSSI host.  Something like "jack-dssi-host nekobee.so" will do it.
 
