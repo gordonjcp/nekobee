@@ -4,7 +4,7 @@ You've got as far as extracting the tarball.  This is good.
 Say "./configure" - this bit isn't set up right because I'm crap at autotools.
 The autoconf scripts might fail to notice if you don't have liblo, dssi or some development libraries.
 Once configure has done its thing, use make and make install - the default place to put it is /usr/local/lib/dssi/nekobee
-If you get compilation errors, you're probably missing a library.  Please report it to gordon@gjcp.net
+If you get compilation errors, you're probably missing a library.  Please report it to gordon@nekosynth.co.uk
 
 Launch the plugin with your favourite DSSI host.  Something like "jack-dssi-host nekobee.so" will do it.
 
@@ -21,5 +21,5 @@ Decay:		0x48	// Decay time (well release really)
 Accent Level:	0x4	// 
 Volume:		0x07	// standard main volume
 
-The decay knob works backwards.  This will be fixed, but will break old values ofor the knob.
+The decay knob works backwards.  This will be fixed, but will break old values for the knob.
 
