@@ -18,7 +18,6 @@ def configure(conf):
     conf.check_tool('compiler_cc')
 
     conf.check_cfg(package='dssi', args='--cflags --libs')
-    conf.check_cfg(package='lv2core', args='--cflags --libs')
     conf.check_cfg(package='liblo', args='--cflags --libs')
     conf.check_cfg(package='gtk+-2.0', args='--cflags --libs')
 
