@@ -91,7 +91,7 @@ create_voice_slider(GtkWidget *main_window, int index, GtkWidget *table,
     adjustment = gtk_adjustment_new (0, 0, 10, 0.005, 1, 0);
     voice_widget[index] = adjustment;
 
-    knob = gtk_knob_new (GTK_ADJUSTMENT (adjustment));
+    knob = GTK_WIDGET(neko_knob_new (GTK_ADJUSTMENT (adjustment)));
     gtk_widget_ref (knob);
     gtk_object_set_data_full (GTK_OBJECT (main_window), text, knob,
                               (GtkDestroyNotify) gtk_widget_unref);

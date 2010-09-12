@@ -58,7 +58,7 @@ def build(bld):
 	'src/gui_callbacks.c',
 	'src/gui_data.c',
 	'src/gui_interface.c',
-	'src/gtkknob.c',
+	'src/nekoknob.c',
 #	'src/gtk/slider.c',
 	'src/gui_main.c',
 	'src/nekobee_data.c',
