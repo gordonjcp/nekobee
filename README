@@ -1,6 +1,6 @@
 There isn't really a README for nekobee yet.
 
-You've got as far as extracting the tarball.  This is good.
+You've got as far as extracting the tarball or cloning the git repo.  This is good.
 Say "./configure" - this bit isn't set up right because I'm crap at autotools.
 The autoconf scripts might fail to notice if you don't have liblo, dssi or some development libraries.
 Once configure has done its thing, use make and make install - the default place to put it is /usr/local/lib/dssi/nekobee
