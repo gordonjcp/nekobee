@@ -22,8 +22,7 @@
 
 #include <math.h>
 #include <stdio.h>
-#include <gtk/gtkmain.h>
-#include <gtk/gtksignal.h>
+#include <gtk/gtk.h>
 
 #include "config.h"
 #include "gtkknob.h"

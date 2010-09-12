@@ -24,6 +24,9 @@ def configure(conf):
     conf.env['DSSI_DIR'] = os.path.normpath(os.path.join(conf.env['PREFIX'], 'lib', 'dssi'))
     conf.env['INSTALL_DIR'] = os.path.join(conf.env['DSSI_DIR'], 'nekobee')
 
+    conf.env.CCFLAGS +=  ['-DG_DISABLE_SINGLE_INCLUDES','-DGDK_PIXBUF_DISABLE_SINGLE_INCLUDES', '-DGTK_DISABLE_SINGLE_INCLUDES']
+    conf.env.CCFLAGS +=  ["-DG_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_DEPRECATED -DGDK_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED"]
+
     conf.define('INSTALL_DIR', conf.env['INSTALL_DIR'])
     conf.write_config_header('config.h')
 
