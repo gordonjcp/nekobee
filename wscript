@@ -31,7 +31,7 @@ def build(bld):
     # DSSI plugin
     plugin_dssi = bld.new_task_gen('cc', 'shlib')
     plugin_dssi.env['shlib_PATTERN'] = '%s.so'
-    plugin_dssi.env.append_value("LINKFLAGS", "-module -avoid-version -Wc,-nostartfiles")
+    plugin_dssi.env.append_value("LINKFLAGS", "-lm")
     plugin_dssi.includes = ['.', 'src']
     plugin_dssi.defines = 'HAVE_CONFIG_H'
     plugin_dssi.source = [
@@ -49,6 +49,7 @@ def build(bld):
 
     # DSSI UI executable
     gui_gtk = bld.new_task_gen('cc', 'program')
+    gui_gtk.env.append_value("LINKFLAGS", "-lm")
     gui_gtk.includes = ['.', 'src']
     gui_gtk.defines = 'HAVE_CONFIG_H'
     gui_gtk.source = [
