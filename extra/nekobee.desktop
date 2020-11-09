@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Nekobee
+Comment=Simple single-oscillator DSSI plugin
+Comment[fr]=Greffon DSSI d'oscillateur-unique simple
+Keywords=audio;sound;jackd,midi,synth;synthesizer
+Exec=nekobee
+Icon=nekobee
+Terminal=false
+Type=Application
+Categories=GNOME;AudioVideo;Audio;
