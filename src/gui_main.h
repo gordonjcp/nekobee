@@ -28,7 +28,7 @@
 #include <lo/lo.h>
 
 #include "nekobee_types.h"
-char *user_friendly_id;
+extern char *     user_friendly_id;
 extern char *     osc_host_url;
 extern char *     osc_self_url;
 extern lo_address osc_host_address;
