@@ -33,7 +33,7 @@
 
 #include <gtk/gtk.h>
 #include <lo/lo.h>
- 
+
 #include "nekobee_types.h"
 #include "nekobee.h"
 #include "gui_callbacks.h"
@@ -42,6 +42,7 @@
 
 /* ==== global variables ==== */
 
+char *     user_friendly_id;
 char *     osc_host_url;
 char *     osc_self_url;
 lo_address osc_host_address;
